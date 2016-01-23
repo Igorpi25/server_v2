@@ -1,0 +1,5 @@
+[05-May-2015 06:40:26 UTC] PHP Fatal error:  Class 'Slim\Middleware' not found in /home/letsrace/public_html/libs/Slim/Middleware/Flash.php on line 48
+[05-May-2015 06:44:13 UTC] PHP Fatal error:  Class 'Slim\Middleware' not found in /home/letsrace/public_html/libs/Slim/Middleware/ContentTypes.php on line 49
+[05-May-2015 06:51:47 UTC] PHP Fatal error:  Class 'Slim\Middleware' not found in /home/letsrace/public_html/libs/Slim/Middleware/SessionCookie.php on line 58
+[05-May-2015 06:55:34 UTC] PHP Fatal error:  Class 'Slim\Middleware' not found in /home/letsrace/public_html/libs/Slim/Middleware/MethodOverride.php on line 50
+[05-May-2015 06:59:21 UTC] PHP Fatal error:  Class 'Slim\Middleware' not found in /home/letsrace/public_html/libs/Slim/Middleware/PrettyExceptions.php on line 46

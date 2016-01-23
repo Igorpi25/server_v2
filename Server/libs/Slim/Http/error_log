@@ -1,0 +1,2 @@
+[05-May-2015 06:25:18 UTC] PHP Fatal error:  Class 'Slim\Helper\Set' not found in /home/letsrace/public_html/libs/Slim/Http/Cookies.php on line 36
+[05-May-2015 06:29:05 UTC] PHP Fatal error:  Class 'Slim\Helper\Set' not found in /home/letsrace/public_html/libs/Slim/Http/Headers.php on line 43

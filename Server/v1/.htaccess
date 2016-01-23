@@ -1,0 +1,4 @@
+RewriteEngine On 
+RewriteBase /v1/
+RewriteCond %{REQUEST_FILENAME} !-f 
+RewriteRule ^(.*)$ %{ENV:BASE}index.php [QSA,L]
