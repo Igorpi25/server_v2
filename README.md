@@ -11,5 +11,7 @@ Server (Warning! Not ready yet)
 -----------------------
 (Будет приложен пошаговая инструкция для запуска кода на LAMP)
 
+Установить настройки сервера в нужных полях в файле include/Config.php
+
 [1]: https://github.com/Igorpi25/Connection
 [2]: https://github.com/Igorpi25/Session
