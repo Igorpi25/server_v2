@@ -1,7 +1,7 @@
-Server (Warning! Not ready yet)
-===============================
+Server
+======
 
-Серверная часть для тестирования демонстрационного приложения следующих Андроид библиотек:
+Данный проект - это серверная часть для демонстрации работы следующих Андроид библиотек:
 * [Connection][1]
 * [Session][2]
 * Uploader
@@ -50,8 +50,14 @@ sudo service apache2 restart
 На всякий случай очистите кэш браузера. Страница, которую Apache возвращает по умолчанию, у меня сохранилась в кэше, и я долго не мог понять причину - почему index.php не меняется
 8.	Изменить mysql-пользователя, пароль, имя базы данных, localhost в файле html/include/Config.php
 9.	Изменить URL_HOME в файле html/include/Config.php. Это нужно чтобы ссылки на аватары и иконки работали
-10.	Прописать адрес (ip или домен) в URL_DOMEN файла com.ivanov.tech.connection.Connection.java в Android проекте
-11. Установить настройки сервера в нужных полях в файле include/Config.php
+10. Установить настройки сервера в нужных полях в файле include/Config.php
+
+Настройка в Android клиенте
+-------------------------
+* **Connection** Прописать адрес (ip или домен) в URL_DOMEN файла com.ivanov.tech.connection.Connection.java в Android проекте
+* **Session** Зайдите в файл Session.java в "com.ivanov.tech.session". Напишите домен вашего сервера в константах testApiKeyUrl, registerUrl, loginUrl
+
+**Настройки подмодулей** Проект Session, в качестве подмодуля, содержит проект Connection. Поэтому когда вы настраиваете Session, также следует ввести настройки и в Connection. Если этого не делать, то запросы Session будут доходить до сервера, а запросы Connection будут уходить в никуда
 
 [1]: https://github.com/Igorpi25/Connection
 [2]: https://github.com/Igorpi25/Session
