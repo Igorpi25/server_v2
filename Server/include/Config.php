@@ -5,10 +5,10 @@
 
 //Файл публикуется с ошибками. Следует сразу добавить нужные строки 
 
-define('DB_USERNAME', **********);//MySql user login
-define('DB_PASSWORD', **********);//Set password for mysql user
+define('DB_USERNAME', 'igor');//MySql user login
+define('DB_PASSWORD', 'eY2vHmju');//Set password for mysql user
 define('DB_HOST', 'localhost');//You should set here your  own host name. Ususally used 'localhost'
-define('DB_NAME', Your should write your db name);//date-base name used in mysql
+define('DB_NAME', 'igorserver');//date-base name used in mysql
  
 define('USER_CREATED_SUCCESSFULLY', 0);
 define('USER_CREATE_FAILED', 1);
@@ -26,5 +26,5 @@ define("path_fulls", path_images.'/fulls/');
 define("path_avatars", path_images.'/avatars/');
 define("path_icons", path_images.'/icons/');
 
-define("URL_HOME",Your domen home);//set here your domen home url
+define("URL_HOME","http://94.245.159.1/igorserver");//set here your domen home url
 ?>
