@@ -412,7 +412,7 @@ class DbHandler {
      */
     public function getUserAvatar($user_id) {
     
-        $stmt = $this->conn->prepare("SELECT a.filename_full, a.filename_avatar, a.filename_icon, a.created_at FROM users u LEFT OUTER JOIN avatars a ON u.avatar = a.id WHERE u.id = ? AND u.avatar != 0 AND u.avatar != NULL ");
+        $stmt = $this->conn->prepare("SELECT a.filename_full, a.filename_avatar, a.filename_icon, a.created_at FROM users u LEFT OUTER JOIN avatars a ON u.avatar = a.id WHERE u.id = ? AND u.avatar != 0 ");
         
         
         $stmt->bind_param("i", $user_id);

@@ -26,5 +26,5 @@ define("path_fulls", path_images.'/fulls/');
 define("path_avatars", path_images.'/avatars/');
 define("path_icons", path_images.'/icons/');
 
-define("URL_HOME","http://94.245.159.1/igorserver");//set here your domen home url
+define("URL_HOME","http://94.245.159.1");//set here your domen home url
 ?>
