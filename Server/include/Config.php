@@ -20,7 +20,7 @@ define("size_full",600);
 define("size_avatar",300);
 define("size_icon",120);
 	
-define("path_images",'/images');
+define("path_images",'/igorserver/images');
 	
 define("path_fulls", path_images.'/fulls/');
 define("path_avatars", path_images.'/avatars/');
