@@ -1,7 +1,7 @@
 <?php
 
 require_once '../include/SimpleImage.php'; 
-require_once '../include/DbHandler.php';
+require_once '../include/DbHandlerProfile.php';
 require_once '../include/PassHash.php';
 
 require_once '../libs/Slim/Slim.php';
@@ -14,13 +14,44 @@ $app = new \Slim\Slim();
 // User id from db - Global Variable
 $user_id = NULL;
 
-// Server update span time. Igors var
-$update_span=10*1000;
-
+/**
+ * It used to Slim testing during installation the server 
+ */
 $app->get('/hello/:name', function ($name) {
-    echo "Hello, " . $name;
+		//Console command to notify that group has been changed
+		/*$json_header=array();
+		$json_header["console"]="v1/index/hello";
+		$json_header["operation"]=CONSOLE_OPERATION_GROUP;
+		$json_header["group_operationid"]=GROUPOPERATION_SAVE;
+		$json_header["groupid"]=2;
+		$json_header["senderid"]=1;
+		
+		$json=array();
+		$json["name"]="$name";
+		
+		$json_header["json"]=json_encode($json);
+		$console_response=consoleCommand($json_header);			
+				
+		echo $console_response["message"];*/
+		echo "hello";
 });
-  
+
+/**
+ * Echoing json response to client
+ * @param String $status_code Http response code
+ * @param Int $response Json response
+ */
+function echoResponse($status_code, $response) {
+    $app = \Slim\Slim::getInstance();
+    // Http response code
+    $app->status($status_code);
+ 
+    // setting response content type to json
+    $app->contentType('application/json');
+ 
+    echo json_encode($response,JSON_UNESCAPED_SLASHES);
+}
+
 /**
  * Verifying required params posted or not
  */
@@ -48,7 +79,7 @@ function verifyRequiredParams($required_fields) {
         $app = \Slim\Slim::getInstance();
         $response["error"] = true;
         $response["message"] = 'Required field(s) ' . substr($error_fields, 0, -2) . ' is missing or empty';
-        echoRespnse(400, $response);
+        echoResponse(400, $response);
         $app->stop();
     }
 }
@@ -61,28 +92,11 @@ function validateEmail($email) {
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $response["error"] = true;
         $response["message"] = 'Email address is not valid';
-        echoRespnse(400, $response);
+        echoResponse(400, $response);
         $app->stop();
     }
 }
- 
-/**
- * Echoing json response to client
- * @param String $status_code Http response code
- * @param Int $response Json response
- */
-function echoRespnse($status_code, $response) {
-    $app = \Slim\Slim::getInstance();
-    // Http response code
-    $app->status($status_code);
- 
-    // setting response content type to json
-    $app->contentType('application/json');
- 
-    echo json_encode($response,JSON_UNESCAPED_SLASHES);
-}
- 
-
+  
 /**
  * User Registration
  * url - /register
@@ -103,24 +117,24 @@ $app->post('/register', function() use ($app) {
             // validating email address
             validateEmail($email);
  
-            $db = new DbHandler();
+            $db = new DbHandlerProfile();
             $res = $db->createUser($name, $email, $password);
  
             if ($res == USER_CREATED_SUCCESSFULLY) {
             	$response["success"] = 1;
                 $response["error"] = false;
                 $response["message"] = "You are successfully registered";
-                echoRespnse(201, $response);
+                echoResponse(201, $response);
             } else if ($res == USER_CREATE_FAILED) {
             	$response["success"] = 0;
                 $response["error"] = true;
                 $response["message"] = "Oops! An error occurred while registereing";
-                echoRespnse(200, $response);
+                echoResponse(200, $response);
             } else if ($res == USER_ALREADY_EXISTED) {
             	$response["success"] = 0;
                 $response["error"] = true;
                 $response["message"] = "Sorry, this email already existed";
-                echoRespnse(200, $response);
+                echoResponse(200, $response);
             }
         });
 		
@@ -139,7 +153,7 @@ $app->post('/login', function() use ($app) {
             $password = $app->request()->post('password');
             $response = array();
  
-            $db = new DbHandler();
+            $db = new DbHandlerProfile();
             // check for correct email and password
             if ($db->checkLogin($email, $password)) {
                 // get the user by email
@@ -160,7 +174,7 @@ $app->post('/login', function() use ($app) {
                 $response['message'] = 'Login failed. Incorrect credentials';
             }
  
-            echoRespnse(200, $response);
+            echoResponse(200, $response);
         });
 		
 /**
@@ -175,7 +189,7 @@ function authenticate(\Slim\Route $route) {
  
     // Verifying 'Api-Key' Header
     if (isset($headers['Api-Key'])) {
-        $db = new DbHandler();
+        $db = new DbHandlerProfile();
  
         // get the api key
         $api_key = $headers['Api-Key'];
@@ -185,7 +199,7 @@ function authenticate(\Slim\Route $route) {
             $response["error"] = true;
             $response["message"] = "Access Denied. Invalid Api key";
             $response["success"] = 0;
-            echoRespnse(401, $response);
+            echoResponse(401, $response);
             $app->stop();
         } else {
             global $user_id;
@@ -199,14 +213,13 @@ function authenticate(\Slim\Route $route) {
         $response["error"] = true;
         $response["message"] = "Api key is misssing";
         $response["success"] = 0;
-        echoRespnse(400, $response);
+        echoResponse(400, $response);
         $app->stop();
     }
     
     
 }
 
-/*Check api key by 'authenticate'-protocol*/
 $app->post('/testapikey', 'authenticate', function() {
             
             $response=array();
@@ -214,9 +227,11 @@ $app->post('/testapikey', 'authenticate', function() {
             $response["message"] = "Api key is actual";
             $response["success"] = 1;
              
-            echoRespnse(200, $response);
-        });
-   
+            echoResponse(200, $response);
+});
+
+//----------------Users-----------------------------------------
+
 /**
  * Listing all users
  * method GET
@@ -224,23 +239,24 @@ $app->post('/testapikey', 'authenticate', function() {
  */
 $app->get('/users/all', 'authenticate', function() {
            
-            
-            $db = new DbHandler();
+            global $user_id;
+			
+            $db = new DbHandlerProfile();
             
             // listing all users            
-            $result = $db->getAllUsers();
+            $result = $db->getAllFriends($user_id);
  	    
  	    $response = array();
- 	    if($result==null){
- 	    	$response["success"] = 0;
-            	$response["error"] = true;
- 	    }else{		
+ 	    //if($result==null){
+		//		$response["success"] = 0;
+        //    	$response["error"] = true;
+ 	    //}else{		
             	$response["success"] = 1;
             	$response["error"] = false;
             	$response["users"]=$result;
-            }
+        //}
  
-            echoRespnse(200, $response);
+            echoResponse(200, $response);
         });
         
 /**
@@ -251,14 +267,14 @@ $app->get('/users/all', 'authenticate', function() {
 $app->get('/users/:id', 'authenticate', function($id) {
            
             
-            $db = new DbHandler();
-            
+            $db = new DbHandlerProfile();
+            global $user_id;
             if($id==0){
-            	global $user_id;
+            	
             	$id=$user_id;
             }
                       
-            $result = $db->getUserById($id);
+            $result = $db->getFriendById($user_id,$id);
  	    
  	    $response = array();
  	    if($result==NULL){
@@ -274,7 +290,7 @@ $app->get('/users/:id', 'authenticate', function($id) {
             	$response["users"]=$users;
             }
  
-            echoRespnse(200, $response);
+            echoResponse(200, $response);
 });
 
 /**
@@ -284,7 +300,7 @@ $app->get('/users/:id', 'authenticate', function($id) {
  */
 $app->post('/users', 'authenticate', function() use ($app) {
            
-            $db = new DbHandler();
+            $db = new DbHandlerProfile();
             
             global $user_id;
             
@@ -299,9 +315,11 @@ $app->post('/users', 'authenticate', function() use ($app) {
  	    
  	    $response = $db->updateUser($user_id,$name,$status);
  
-            echoRespnse(200, $response);
+            echoResponse(200, $response);
 });
-        
+
+//-----------------Photo Uploading--------------------------
+
 function createThumb($image,$size,$path){	
 
         $image->thumbnail($size, $size);
@@ -331,6 +349,8 @@ $app->post('/avatars/upload', 'authenticate', function() use ($app) {
 	$response = array();
   	
   	try{
+		
+	
   		// Check if the file is missing
 		if (!isset($_FILES['image']['name'])) {
 			throw new Exception('Not received any file!F');
@@ -340,13 +360,13 @@ $app->post('/avatars/upload', 'authenticate', function() use ($app) {
 			throw new Exception('File is too big');
 		}
 			
-	    	$tmpFile = $_FILES["image"]["tmp_name"];
+	    $tmpFile = $_FILES["image"]["tmp_name"];
 	    	
-	    	// Check if the file is really an image
-	    	list($width, $height) = getimagesize($tmpFile);    		
-    		if ($width == null && $height == null) {
-    			throw new Exception('File is not image!F');
-    		}
+	    // Check if the file is really an image
+	    list($width, $height) = getimagesize($tmpFile);    		
+    	if ($width == null && $height == null) {
+    		throw new Exception('File is not image!F');
+    	}
  	
  		$image = new abeautifulsite\SimpleImage($tmpFile);
 	  	
@@ -355,18 +375,27 @@ $app->post('/avatars/upload', 'authenticate', function() use ($app) {
 	  	$value_icon=createThumb($image,size_icon,$_SERVER['DOCUMENT_ROOT'].path_icons);
 	  	
 	  	global $user_id;
-	  	$db = new DbHandler();
-	  	if(!$db->createAvatar($user_id,$value_full,$value_avatar,$value_icon)){
+	  	$db = new DbHandlerProfile();
+	  	if(!$db->createUserAvatar($user_id,$value_full,$value_avatar,$value_icon)){
 	  		unlink($_SERVER['DOCUMENT_ROOT'].path_fulls.$value_full);
 	  		unlink($_SERVER['DOCUMENT_ROOT'].path_avatars.$value_avatar);
 	  		unlink($_SERVER['DOCUMENT_ROOT'].path_icons.$value_icon);
 	  		throw new Exception('Failed to insert to DB');
 	  	}	  	
- 	         	        
-	        $response['message'] = 'File uploaded successfully!';
-	        $response['error'] = false;
-	        $response['success'] = 1;
-	
+ 	     
+	    $response['message'] = 'File uploaded successfully!';
+	    $response['error'] = false;
+	    $response['success'] = 1;
+			
+		//Console command to notify users
+		$json_header=array();
+		$json_header["console"]="v1/index/avatars/upload";
+		$json_header["operation"]=CONSOLE_OPERATION_USER_CHANGED;
+		$json_header["userid"]=$user_id;		
+		$console_response=consoleCommand($json_header);
+		
+		$response['consoleCommand'] = $console_response["message"];
+			
 	} catch (Exception $e) {
 		// Exception occurred. Make error flag true
 	        $response['error'] = true;
@@ -374,292 +403,233 @@ $app->post('/avatars/upload', 'authenticate', function() use ($app) {
 	     	$response['success'] = 0;
 	}
 	
-	echoRespnse(200,$response);
+	echoResponse(200,$response);
    	      	
 });
 
 /**
- * Get user's avatar
- * method GET
- * url - /avatars/:user_id
- * return - url of user's avatar image
+ * Upload group panorama photo
+ * method POST
+ * url - /group_panorama/upload
  */
-$app->get('/avatars/:user_id', 'authenticate', function($id) use ($app) {
+$app->post('/group_panorama/upload/:group_id', 'authenticate', function($group_id) use ($app) {
 	
+	global $user_id;
+	$db = new DbHandlerProfile();
+	
+	// array for final json respone
 	$response = array();
+  	
+  	try{
+		//Checkin user permission to this operation
+		$user_status_in_group=$db->getUserStatusInGroup($group_id,$user_id);		
+		if( ($user_status_in_group!=0)&&($user_status_in_group!=1)&&($user_status_in_group!=2) ) {
+			//User doesn't consist in group
+			throw new Exception('No permission. User does not consist in group');
+		} if( ($user_status_in_group!=1)&&($user_status_in_group!=2) ) {
+			//User is Not Super-admin and not Admin
+			throw new Exception('No permission. Only admin can change group-profile photo');
+		}
 	
-	try{	
-		$db = new DbHandler();
-	        
-	        if($id==0){
-	        	global $user_id;	
-	        	$id=$user_id;
-	        }
-	            
-	        $result = $db->getUserAvatar($id);
-	        
-	        $result['full']=URL_HOME.path_fulls.$result['full'];
-	        $result['avatar']=URL_HOME.path_avatars.$result['avatar'];
-	        $result['icon']=URL_HOME.path_icons.$result['icon'];
-	        
-	 	$response['avatars'] = $result;
-	        $response['error'] = false;
-	        $response['success'] = 1;
-        
-        } catch (Exception $e) {
-        
+  		// Check if the file is missing
+		if (!isset($_FILES['image']['name'])) {
+			throw new Exception('Not received any file!F');
+		}
+		
+		if($_FILES['image']['size'] > 2*1024*1024) { 
+			throw new Exception('File is too big');
+		}
+			
+	    $tmpFile = $_FILES["image"]["tmp_name"];
+	    	
+	    // Check if the file is really an image
+	    list($width, $height) = getimagesize($tmpFile);    		
+    	if ($width == null && $height == null) {
+    		throw new Exception('File is not image!F');
+    	}
+ 	
+ 		$image = new abeautifulsite\SimpleImage($tmpFile);
+	  	
+	  	$value_full=createThumb($image,size_full,$_SERVER['DOCUMENT_ROOT'].path_fulls);
+	  	$value_avatar=createThumb($image,size_avatar,$_SERVER['DOCUMENT_ROOT'].path_avatars);
+	  	$value_icon=createThumb($image,size_icon,$_SERVER['DOCUMENT_ROOT'].path_icons);
+	  	
+	  	
+	  	
+	  	if(!$db->createGroupAvatar($group_id,$value_full,$value_avatar,$value_icon)){
+	  		unlink($_SERVER['DOCUMENT_ROOT'].path_fulls.$value_full);
+	  		unlink($_SERVER['DOCUMENT_ROOT'].path_avatars.$value_avatar);
+	  		unlink($_SERVER['DOCUMENT_ROOT'].path_icons.$value_icon);
+	  		throw new Exception('Failed to insert to DB');
+	  	}	  	
+ 	     
+	    $response['message'] = 'File uploaded successfully!';
+	    $response['error'] = false;
+	    $response['success'] = 1;
+			
+		
+		//Console command to notify users
+		$json_header=array();
+		$json_header["console"]="v1/index/group_panorama/upload/".$group_id;
+		$json_header["operation"]=CONSOLE_OPERATION_GROUP;
+		$json_header["group_operationid"]=GROUPOPERATION_SAVE;
+		$json_header["groupid"]=$group_id;
+		$json_header["senderid"]=$user_id;
+		$json_header["json"]='{dummy:"Dummy"}';
+		$console_response=consoleCommand($json_header);
+		
+		$response['consoleCommand'] = $console_response["message"];
+			
+	} catch (Exception $e) {
+		// Exception occurred. Make error flag true
 	        $response['error'] = true;
 	        $response['message'] = $e->getMessage();
 	     	$response['success'] = 0;
 	}
 	
-	echoRespnse(200, $response);
-	
-	
+	echoResponse(200,$response);
    	      	
 });
 
-//-----------------Chat Group-------------------------------
+//------------------Group-------------------------------
 
 /**
  * Create group and add users
  * method POST
- * url - /chat/create_group
+ * url - /create_group
  * return - groupid
  */
-$app->post('/chat/create_group', 'authenticate', function () use ($app)  {
+$app->post('/create_group', 'authenticate', function () use ($app)  {
 	
+	try{
 	
-	$response = array();
-	
-	try{	
-			$db = new DbHandlerChat();
-	        global $user_id;	
-	        			
-			$groupid=$db->createGroup($user_id);
-			
-			if($groupid==NULL)throw new Exception("post('/chat/create_group' groupid==NULL exception");
-			
-			$response['groupid'] = $groupid;
-	        $response['error'] = false;
-	        $response['success'] = 1;
-        
-        } catch (Exception $e) {
-        
-	        $response['error'] = true;
-	        $response['message'] = $e->getMessage();
-	     	$response['success'] = 0;
-	}
-	
-	echoRespnse(200, $response);
-
-});	
-
-/**
- * Get all groups 
- * method GET
- * url - /chat/groups/all
- */
-$app->get('/chat/groups/all', 'authenticate', function () {
 		
-	$response = array();
-	
-	try{	
-			$db = new DbHandlerChat();
-	        global $user_id;
-	        			
-			$groups=$db->getAllGroups();
-			
-			if($groups==NULL)throw new Exception("Exception get('/chat/all groups==NULL ");
-			
-			$response['groups'] = $groups;
-	        $response['error'] = false;
-	        $response['success'] = 1;
-        
-        } catch (Exception $e) {
-        
-	        $response['error'] = true;
-	        $response['message'] = $e->getMessage();
-	     	$response['success'] = 0;
-	}
-	
-	echoRespnse(200, $response);
-
-});	
-
-/**
- * Get group by id
- * method GET
- * url - /chat/groups/:groupid
- */
-$app->get('/chat/groups/:groupid', 'authenticate', function ($groupid) {
+		global $user_id;	
 		
-	$response = array();
+		$response = array();
+				
+		//Console command to notify that group has been changed
+		$json_header=array();
+		$json_header["console"]="v1/index/create_group";
+		$json_header["operation"]=CONSOLE_OPERATION_GROUP;
+		$json_header["group_operationid"]=GROUPOPERATION_CREATE;
+		$json_header["senderid"]=$user_id;
+		$console_response=consoleCommand($json_header);			
+		$response['consoleCommand_create'] = $console_response["message"];
+		
+		$groupid = $console_response["groupid"];//Get created groupid from console response
+		
+		$users=$app->request->post('users');	// reading post params
+		
+		//Console command to notify that some users in group has been changed
+		$json_header=array();
+		$json_header["console"]="v1/index/create_group";
+		$json_header["operation"]=CONSOLE_OPERATION_GROUP;
+		$json_header["group_operationid"]=GROUPOPERATION_ADD_USERS;
+		$json_header["senderid"]=$user_id;
+		$json_header["groupid"]=$groupid;
+		$json_header["users"]=$users;
+		$console_response=consoleCommand($json_header);
+		
+		$response['consoleCommand_add_users'] = $console_response["message"];
+		
+		$response['error'] = false;
+		$response['message'] = "Group created and users added to group";
+		$response['groupid'] = $groupid;
+		$response['success'] = 1;
+		
+	} catch (Exception $e) {
 	
-	try{	
-			$db = new DbHandlerChat();
-	        global $user_id;
-	        			
-			$groups=$db->getGroupById($groupid);
-			
-			if($groups==NULL)throw new Exception("Exception get('/chat/".$groupid."' groups==NULL ");
-			
-			$response['groups'] = $groups;
-	        $response['error'] = false;
-	        $response['success'] = 1;
-        
-        } catch (Exception $e) {
-        
-	        $response['error'] = true;
-	        $response['message'] = $e->getMessage();
-	     	$response['success'] = 0;
+		$response['error'] = true;
+		$response['message'] = $e->getMessage();
+		$response['success'] = 0;
 	}
 	
-	echoRespnse(200, $response);
+	echoResponse(200, $response);
 
 });	
 
+//-----------------Search-----------------------------------
+
 /**
- * Add user to group
+ * Search user by value
  * method POST
- * url - /chat/add_group_users
+ * url - /search_user
+ * param - string value
+ * return - userid found user's id
  */
-$app->post('/chat/add_group_users', 'authenticate', function () use ($app) {
+$app->post('/search_contact', 'authenticate', function () use ($app)  {
 	
 	// check for required params
-    verifyRequiredParams(array('groupid','usersid'));
+    verifyRequiredParams(array('value'));
 	
 	$response = array();
 	
 	try{	
-		$db = new DbHandlerChat();
-	        
-		global $user_id;//Current user	
-	        
-		// reading post params
-            	$groupid = $app->request->post('groupid');
-		$usersid = $app->request->post('usersid');
-		
-		//По умолчанию все добавляемые обычные юзеры
-		$status=0;
-
-		$integerIDs = array_map('intval', explode(',', $usersid));
-
-		foreach($integerIDs as $userid){
-			
-			//Presently all user consists in group can add new user. Status: 0,1,2
-			$current_user_status=$db->getUserStatusInGroup($groupid,$user_id);			
-			if(($current_user_status==0)||($current_user_status==1)||($current_user_status==2)){
-				
-				if(($status<0)||($status>1))throw new Exception("Illegal user-status (status=".$status.") requested");
-				if(($status==2)&&(current_user_status==0))throw new Exception("Not permitted user-status (status=".$status.") requested");
-				
-				$db->addUserToGroup($groupid,$userid,$status);
-				
-			}else{
-				if($user_id==$userid){throw new Exception("Only user consists in group can add new user. Try '/chat/join_to_group' instead");}
-				else {new Exception("Only user consists in group can add new user");}			
-			}
-		
-		}
-		
-		$response['message'] = "Users:".implode(" ",$integerIDs)." successfully added to group:".$groupid;
-	        $response['error'] = false;
-	        $response['success'] = 1;
-        
-        } catch (Exception $e) {
-        
-	        $response['error'] = true;
-	        $response['message'] = $e->getMessage();
-	     	$response['success'] = 0;
-	}
-	
-	echoRespnse(200, $response);
-
-});	
-
-/**
- * Get users in group
- * method GET
- * url - /chat/get_group_users/:groupid
- * return - list of users
- */
-$app->get('/chat/get_group_users/:groupid', 'authenticate', function ($groupid) use ($app) {
-		
-	$response = array();
-	
-	try{	
-			$db = new DbHandlerChat();
+			$db = new DbHandlerProfile();
 	        global $user_id;	
+			
+			// reading post params
+			$value = $app->request->post('value');
 	        			
-			$users=$db->getUsersInGroup($groupid);
+			$found_userid=$db->searchUser($value);
 			
-			if($users==NULL)throw new Exception("Exception get('/chat/get_users_in_group/:".$groupid."' users==NULL");
+			if($found_userid==NULL)throw new Exception("No user found");
 			
-			$response['users'] = $users;
+			$response['userid'] = $found_userid;
 	        $response['error'] = false;
 	        $response['success'] = 1;
-        
-        } catch (Exception $e) {
-        
-	        $response['error'] = true;
-	        $response['message'] = $e->getMessage();
-	     	$response['success'] = 0;
-	}
-	
-	echoRespnse(200, $response);
-
-});	
-
-/**
- * Save group url
- * method POST
- * url - /chat/save_group
- */
-$app->post('/chat/save_group', 'authenticate', function () use ($app) {
-	
-	// check for required params
-    	verifyRequiredParams(array('name','groupid'));
-	
-	$response = array();
-	
-	try{	
-		$db = new DbHandlerChat();
-	        
-		global $user_id;//Current user	
-	        
-		// reading post params
-            	$name = $app->request->post('name');
-		$groupid = $app->request->post('groupid');
-			
-			
-			//Presently all user consists in group can add new user. Status: 0,1,2
-			$current_user_status=$db->getUserStatusInGroup($groupid,$user_id);			
-			if(($current_user_status==0)||($current_user_status==1)||($current_user_status==2)){
-								
-				if(($status==2)&&(current_user_status==0))throw new Exception("Not permitted user-status (status=".$status.") requested");
-				
-				$db->changeGroupName($name,$groupid);
-				
-			}else{
-				throw new Exception("Only user consists in group can change group name");
-			}
-			
-		$response['message'] = "Group name changed successfully";
-	        $response['error'] = false;
-	        $response['success'] = 1;
+			$response['users'] = array();
+			$response['users'][] = $db->getFriendById($user_id,$found_userid);
         
 		} catch (Exception $e) {
         
 	        $response['error'] = true;
-	        $response['message'] = $e->getMessage();
+	        $response['message'] = $e->getMessage()." value=".$value;
 	     	$response['success'] = 0;
-		}
+	}
 	
-	echoRespnse(200, $response);
+	echoResponse(200, $response);
 
 });	
- 
+
+//-----------------Console command------------------
+
+//Operation numbers from WebsocketServer
+define("CONSOLE_OPERATION_USER_CHANGED", 0);
+define("CONSOLE_OPERATION_GROUP", 1);
+
+define("GROUPOPERATION_ADD_USERS", 0);
+define("GROUPOPERATION_SAVE", 1);
+define("GROUPOPERATION_CREATE", 2);
+
+function consoleCommand($header_json){
+
+	require_once dirname($_SERVER['DOCUMENT_ROOT']) . "/public_html/server/class.websocket_client.php";
+
+	$client = new WebsocketClient;
+	
+	$response="{'message': 'ConsoleCommand. begin'}";
+	
+	if($client->connect($header_json, '127.0.0.1', 8001,"/")){	
+		
+		$data = fread($client->_Socket, 1024);
+		$message_array = $client->_hybi10Decode($data);//implode(",",);
+		$response=$message_array["payload"];
+	
+	}else{
+		$response="{'message':'ConsoleCommand. Connecting failed'}";
+	}
+	
+	$client->disconnect();
+	
+	$json=(array)json_decode($response);
+	
+	return $json;
+
+}
+
+
 $app->run();
 
 ?>

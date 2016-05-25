@@ -1,4 +1,4 @@
 RewriteEngine On 
-RewriteBase /igorserver/v1/
-RewriteCond %{REQUEST_FILENAME} !-f 
+RewriteBase /
+RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^(.*)$ %{ENV:BASE}index.php [QSA,L]
