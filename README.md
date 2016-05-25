@@ -2,10 +2,9 @@ Server
 ======
 
 Данный проект - это серверная часть для демонстрации работы следующих Андроид библиотек:
-* [Connection][1]
-* [Session][2]
-* Uploader
-* Profile
+* [Profile][1]
+* [Chat][2]
+* [Messenger][3]
 
 Инструкция по установке и настройке
 ----------------------------------------
@@ -59,5 +58,7 @@ sudo service apache2 restart
 
 **Настройки подмодулей** Проект Session, в качестве подмодуля, содержит проект Connection. Поэтому когда вы настраиваете Session, также следует ввести настройки и в Connection. Если этого не делать, то запросы Session будут доходить до сервера, а запросы Connection будут уходить в никуда
 
-[1]: https://github.com/Igorpi25/Connection
-[2]: https://github.com/Igorpi25/Session
+[1]: https://github.com/Igorpi25/Profile
+[2]: https://github.com/Igorpi25/Chat
+[2]: https://github.com/Igorpi25/Messenger
+
