@@ -48,8 +48,19 @@ class DbHandlerChat extends DbHandler{
      * Listing all messages of User
      * @param Integer $user_id User_id of destination user
      */
-    public function getMessagesPrivate($user_id) {
-        $stmt = $this->conn->prepare("SELECT id, sender, destination, message, value, date FROM chat_private WHERE destination = ?");
+    public function getMessagesPrivate($user_id,$last_timestamp) {
+	
+		$last_datetime=new DateTime();
+        $last_datetime->setTimestamp($last_timestamp);
+        $last_date_string=$last_datetime->format('Y-m-d H:i:s');
+		
+        $stmt = $this->conn->prepare("
+			SELECT id, sender, destination, message, value, date 
+			FROM chat_private 
+			WHERE (destination = ? ) AND ( date > '$last_date_string' ) 
+			ORDER BY date 
+		");
+		
         $stmt->bind_param("i", $user_id);
         if ($stmt->execute()) {
         

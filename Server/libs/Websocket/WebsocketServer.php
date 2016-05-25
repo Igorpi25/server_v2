@@ -860,23 +860,26 @@ protected function ProcessMessageChat($sender,$connects,$json) {
 		
 		$this->log("<<ChatMessage. Private. sender=".$this->getUserIdByConnect($sender)." destination=".$destination_id." transport=".$json["transport"]." value=".$json["value"]);
 		
-		$delivered=false;
+		//$delivered=false;
 		
 		foreach($connects as $connect){
 			if($sender==$connect){			
 				$this->ConfirmToSender($connect,$json);
 			}else if ($this->getUserIdByConnect($connect)==$destination_id) {
 				$this->SendToDestination($connect,$json);
-				$delivered=true;
+				//$delivered=true; 
 			}		
 		}
 		
-		//Если destination не найден, то сохраняем сообщение в БД, чтобы отправить потом
+		$this->log("Accumulate. sender=".$this->getUserIdByConnect($sender)." destination_id=".$destination_id." transport=".$json["transport"]." value=".$json["value"]);
+		$this->db_chat->addMessagePrivate($this->getUserIdByConnect($sender),$destination_id,intval($json["transport"]),$json["value"]);
+		
+		/*//Если destination не найден, то сохраняем сообщение в БД, чтобы отправить потом
 		if(!$delivered){	
 			
 			$this->log("Accumulate. sender=".$this->getUserIdByConnect($sender)." destination_id=".$destination_id." transport=".$json["transport"]." value=".$json["value"]);
 			$this->db_chat->addMessagePrivate($this->getUserIdByConnect($sender),$destination_id,intval($json["transport"]),$json["value"]);
-		}
+		}*/
 		
 		$this->log(">>");
 	
@@ -1259,7 +1262,7 @@ protected function onOpen($connect, $info) {
 	
 	//-------Private-----------------------------
 	
-	$messages=$this->db_chat->getMessagesPrivate($userid);	
+	$messages=$this->db_chat->getMessagesPrivate($userid,$last_timestamp);	
 	//Если есть сохраненные в БД private-сообщения, для только что подключившегося User, от текущего Interlocutor, то отправляем
 	if($messages){
 		$this->log("<<ChatMessage. De-accumulate. Private. connectid=".$this->getIdByConnect($connect)." userid=".$userid);
@@ -1274,7 +1277,7 @@ protected function onOpen($connect, $info) {
 				
 				$this->SendToDestination($connect,$json);
 				//После отправления удаляем из БД, таким образом исключая повторное отправление
-				$this->db_chat->deleteMessagePrivate(intval($message["id"]));
+				//$this->db_chat->deleteMessagePrivate(intval($message["id"]));
 						
 		}
 		$this->log(">>");
