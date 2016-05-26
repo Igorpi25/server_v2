@@ -1,10 +1,13 @@
 <?php
 
-require_once '../include/SimpleImage.php'; 
-require_once '../include/DbHandlerProfile.php';
-require_once '../include/PassHash.php';
+require_once 'include/SimpleImage.php'; 
+require_once 'include/DbHandlerProfile.php';
+require_once 'include/PassHash.php';
 
-require_once '../libs/Slim/Slim.php';
+require_once 'libs/Slim/Slim.php';
+require_once 'communicator/WebsocketClient.php';
+
+define('WEBSOCKET_SERVER_PORT', 8001);
 
  
 \Slim\Slim::registerAutoloader();
@@ -605,13 +608,11 @@ define("GROUPOPERATION_CREATE", 2);
 
 function consoleCommand($header_json){
 
-	require_once dirname($_SERVER['DOCUMENT_ROOT']) . "/public_html/server/class.websocket_client.php";
-
 	$client = new WebsocketClient;
 	
 	$response="{'message': 'ConsoleCommand. begin'}";
 	
-	if($client->connect($header_json, '127.0.0.1', 8001,"/")){	
+	if($client->connect($header_json, '127.0.0.1', WEBSOCKET_SERVER_PORT,"/")){	
 		
 		$data = fread($client->_Socket, 1024);
 		$message_array = $client->_hybi10Decode($data);//implode(",",);

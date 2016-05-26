@@ -73,12 +73,12 @@ public $db_chat,$db_profile,$db_map;
 public function __construct($config) {
         $this->config = $config;
 				
-		require_once dirname($_SERVER['DOCUMENT_ROOT']) . "/public_html/include/DbHandlerChat.php";
-		require_once dirname($_SERVER['DOCUMENT_ROOT']) . "/public_html/include/DbHandlerProfile.php";
-		require_once dirname($_SERVER['DOCUMENT_ROOT']) . "/public_html/include/DbHandlerMap.php";
+		require_once "../include/DbHandlerChat.php";
+		require_once "../include/DbHandlerProfile.php";
+		require_once "../include/DbHandlerMap.php";
         
-		require_once dirname($_SERVER['DOCUMENT_ROOT']) . "/public_html/include/Config.php";
-		require_once dirname($_SERVER['DOCUMENT_ROOT']) . "/public_html/include/DbConnect.php";
+		require_once "../include/Config.php";
+		require_once "../include/DbConnect.php";
          
 		
 		$mysqli = mysqli_init();
