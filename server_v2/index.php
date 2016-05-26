@@ -1,11 +1,11 @@
 <?php
 
-require_once 'include/SimpleImage.php'; 
-require_once 'include/DbHandlerProfile.php';
-require_once 'include/PassHash.php';
+require_once dirname(__FILE__).'/include/SimpleImage.php'; 
+require_once dirname(__FILE__).'/include/DbHandlerProfile.php';
+require_once dirname(__FILE__).'/include/PassHash.php';
 
-require_once 'libs/Slim/Slim.php';
-require_once 'communicator/WebsocketClient.php';
+require_once dirname(__FILE__).'/libs/Slim/Slim.php';
+require_once dirname(__FILE__).'/communicator/WebsocketClient.php';
 
 define('WEBSOCKET_SERVER_PORT', 8001);
 

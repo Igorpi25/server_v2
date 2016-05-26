@@ -7,7 +7,7 @@
  * log - Used to save logs of WebsocketServer
  */
  
-require 'WebsocketServer.php';
+require dirname(__FILE__).'/WebsocketServer.php';
 
 $config = array(
     'pid' => 'out/websocket_pid.txt',

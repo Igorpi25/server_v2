@@ -6,7 +6,7 @@
  * @author Igor Ivanov
  */
  
-require_once dirname(__FILE__) . '/DbHandler.php';
+require_once dirname(__FILE__).'/DbHandler.php';
  
 class DbHandlerProfile extends DbHandler{
  

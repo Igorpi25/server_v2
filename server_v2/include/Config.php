@@ -20,12 +20,12 @@ define("size_full",600);
 define("size_avatar",300);
 define("size_icon",120);
 	
-define("path_images",'/images');
+define("path_images",'/v2/images');
 	
 define("path_fulls", path_images.'/fulls/');
 define("path_avatars", path_images.'/avatars/');
 define("path_icons", path_images.'/icons/');
 
-define("URL_HOME","http://igorpi25.ru/v2");//set here your domen home url
+define("URL_HOME","http://igorpi25.ru");//set here your domen home url
 
 ?>

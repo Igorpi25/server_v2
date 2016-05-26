@@ -73,12 +73,12 @@ public $db_chat,$db_profile,$db_map;
 public function __construct($config) {
         $this->config = $config;
 				
-		require_once "../include/DbHandlerChat.php";
-		require_once "../include/DbHandlerProfile.php";
-		require_once "../include/DbHandlerMap.php";
+		require_once dirname(__FILE__)."/../include/DbHandlerChat.php";
+		require_once dirname(__FILE__)."/../include/DbHandlerProfile.php";
+		require_once dirname(__FILE__)."/../include/DbHandlerMap.php";
         
-		require_once "../include/Config.php";
-		require_once "../include/DbConnect.php";
+		require_once dirname(__FILE__)."/../include/Config.php";
+		require_once dirname(__FILE__)."/../include/DbConnect.php";
          
 		
 		$mysqli = mysqli_init();
@@ -1262,25 +1262,30 @@ protected function onOpen($connect, $info) {
 	
 	//-------Private-----------------------------
 	
-	$messages=$this->db_chat->getMessagesPrivate($userid,$last_timestamp);	
-	//Если есть сохраненные в БД private-сообщения, для только что подключившегося User, от текущего Interlocutor, то отправляем
-	if($messages){
-		$this->log("<<ChatMessage. De-accumulate. Private. connectid=".$this->getIdByConnect($connect)." userid=".$userid);
-		foreach($messages as $message){	
-				
-				
-				$json=array();
-				$json["interlocutor_id"]=$message["sender"];
-				$json["transport"]=$message["message"];
-				$json["value"]=$message["value"];
-				$json["date"]=$message["date"];
-				
-				$this->SendToDestination($connect,$json);
-				//После отправления удаляем из БД, таким образом исключая повторное отправление
-				//$this->db_chat->deleteMessagePrivate(intval($message["id"]));
-						
+	if($last_timestamp!=0){
+	
+		$messages=$this->db_chat->getMessagesPrivate($userid,$last_timestamp);	
+		//Если есть сохраненные в БД private-сообщения, для только что подключившегося User, от текущего Interlocutor, то отправляем
+		if($messages){
+			$this->log("<<ChatMessage. De-accumulate. Private. connectid=".$this->getIdByConnect($connect)." userid=".$userid);
+			foreach($messages as $message){	
+					
+					
+					$json=array();
+					$json["interlocutor_id"]=$message["sender"];
+					$json["transport"]=$message["message"];
+					$json["value"]=$message["value"];
+					$json["date"]=$message["date"];
+					
+					$this->SendToDestination($connect,$json);
+					//После отправления удаляем из БД, таким образом исключая повторное отправление
+					//$this->db_chat->deleteMessagePrivate(intval($message["id"]));
+							
+			}
+			$this->log(">>");
 		}
-		$this->log(">>");
+	} else {//do nothing		
+		//$messages=$this->db_chat->getLast20GroupMessagesOfUser($userid);	
 	}
 	
 	//-------Group--------------------------
