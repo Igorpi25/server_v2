@@ -59,6 +59,8 @@ define("GROUPSTATUS_NOT_IN_GROUP", 7);
 
 define("CONSOLE_OPERATION_USER_CHANGED", 0);
 define("CONSOLE_OPERATION_GROUP", 1);
+define("CONSOLE_OPERATION_CHECK_SERVER", 2);
+
 
 class WebsocketServer {
 
@@ -104,11 +106,11 @@ public function __construct($config) {
 
 public function Start(){
 
-	$pid = @file_get_contents($this->config['pid']);
+	/*$pid = @file_get_contents($this->config['pid']);
     if ($pid) {
         $this->log("Start. Failed. Another pid-file found pid=".$pid);
         die("Start. Failed. Another pid-file found pid=".$pid);
-    }
+    }*/
        
 	$socket = stream_socket_server($this->config['websocket'], $errno, $errstr);	
 	if (!$socket) {
@@ -717,32 +719,8 @@ protected function ProcessConsoleOperation($connect,$info) {
 			fwrite($connect, $this->encode($data_string));
 		
 		break;
-		
-		case CONSOLE_OPERATION_USER_CHANGED:
-			$userid=$info["userid"];
-			
-			$this->log("<<<CONSOLE_OPERATION_USER_CHANGED:");
-			
-			if( array_key_exists(strval($userid), $this->map_userid_connect) ){				
-				$this->outgoingOneUser($this->getConnectByUserId($userid),$userid);					
-			}
-			
-			$this->outgoingNotifyFriends($userid);	
-			$this->outgoingNotifyAllGroupmates($userid);
-			
-			$this->log(">>>");				
-			
-			//Response to console client
-			$response = array();
-			$response["message"]="WebsocketServer. ProcessConsoleOperation CONSOLE_OPERATION_USER_CHANGED success userid=".$userid;					
-			$data_string=json_encode($response);
-			fwrite($connect, $this->encode($data_string));
-		
-		break;
-		
+				
 		case CONSOLE_OPERATION_GROUP:
-			
-			
 			
 			$group_operationid=$info["group_operationid"];
 			$senderid=$info["senderid"];
@@ -787,6 +765,22 @@ protected function ProcessConsoleOperation($connect,$info) {
 				break;
 			}	
 			
+		break;
+		
+		case CONSOLE_OPERATION_CHECK_SERVER:
+			$userid=$info["userid"];
+			
+			$this->log("<<<CONSOLE_OPERATION_CHECK_SERVER:");
+			$this->log("user_id=".$userid);				
+			$this->log(">>>");				
+			
+			//Response to console client
+			$response = array();
+			$response["message"]="WebsocketServer. Server is running";					
+			$response["status"]=1;
+			$data_string=json_encode($response);
+			fwrite($connect, $this->encode($data_string));
+		
 		break;
 	}
 	

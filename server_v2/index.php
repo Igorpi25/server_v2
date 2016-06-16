@@ -24,8 +24,8 @@ $app->get('/hello/:name', function ($name) {
 		//Console command to notify that group has been changed
 		/*$json_header=array();
 		$json_header["console"]="v1/index/hello";
-		$json_header["operation"]=CONSOLE_OPERATION_GROUP;
-		$json_header["group_operationid"]=GROUPOPERATION_SAVE;
+		$json_header["operation"]=M_CONSOLE_OPERATION_GROUP;
+		$json_header["group_operationid"]=M_GROUPOPERATION_SAVE;
 		$json_header["groupid"]=2;
 		$json_header["senderid"]=1;
 		
@@ -392,8 +392,8 @@ $app->post('/avatars/upload', 'authenticate', function() use ($app) {
 			
 		//Console command to notify users
 		$json_header=array();
-		$json_header["console"]="v1/index/avatars/upload";
-		$json_header["operation"]=CONSOLE_OPERATION_USER_CHANGED;
+		$json_header["console"]="v2/index/avatars/upload";
+		$json_header["operation"]=M_CONSOLE_OPERATION_USER_CHANGED;
 		$json_header["userid"]=$user_id;		
 		$console_response=consoleCommand($json_header);
 		
@@ -473,9 +473,9 @@ $app->post('/group_panorama/upload/:group_id', 'authenticate', function($group_i
 		
 		//Console command to notify users
 		$json_header=array();
-		$json_header["console"]="v1/index/group_panorama/upload/".$group_id;
-		$json_header["operation"]=CONSOLE_OPERATION_GROUP;
-		$json_header["group_operationid"]=GROUPOPERATION_SAVE;
+		$json_header["console"]="v2/index/group_panorama/upload/".$group_id;
+		$json_header["operation"]=M_CONSOLE_OPERATION_GROUP;
+		$json_header["group_operationid"]=M_GROUPOPERATION_SAVE;
 		$json_header["groupid"]=$group_id;
 		$json_header["senderid"]=$user_id;
 		$json_header["json"]='{dummy:"Dummy"}';
@@ -514,8 +514,8 @@ $app->post('/create_group', 'authenticate', function () use ($app)  {
 		//Console command to notify that group has been changed
 		$json_header=array();
 		$json_header["console"]="v1/index/create_group";
-		$json_header["operation"]=CONSOLE_OPERATION_GROUP;
-		$json_header["group_operationid"]=GROUPOPERATION_CREATE;
+		$json_header["operation"]=M_CONSOLE_OPERATION_GROUP;
+		$json_header["group_operationid"]=M_GROUPOPERATION_CREATE;
 		$json_header["senderid"]=$user_id;
 		$console_response=consoleCommand($json_header);			
 		$response['consoleCommand_create'] = $console_response["message"];
@@ -526,9 +526,9 @@ $app->post('/create_group', 'authenticate', function () use ($app)  {
 		
 		//Console command to notify that some users in group has been changed
 		$json_header=array();
-		$json_header["console"]="v1/index/create_group";
-		$json_header["operation"]=CONSOLE_OPERATION_GROUP;
-		$json_header["group_operationid"]=GROUPOPERATION_ADD_USERS;
+		$json_header["console"]="v2/index/create_group";
+		$json_header["operation"]=M_CONSOLE_OPERATION_GROUP;
+		$json_header["group_operationid"]=M_GROUPOPERATION_ADD_USERS;
 		$json_header["senderid"]=$user_id;
 		$json_header["groupid"]=$groupid;
 		$json_header["users"]=$users;
@@ -599,18 +599,19 @@ $app->post('/search_contact', 'authenticate', function () use ($app)  {
 //-----------------Console command------------------
 
 //Operation numbers from WebsocketServer
-define("CONSOLE_OPERATION_USER_CHANGED", 0);
-define("CONSOLE_OPERATION_GROUP", 1);
+define("M_CONSOLE_OPERATION_USER_CHANGED", 0);
+define("M_CONSOLE_OPERATION_GROUP", 1);
+define("M_CONSOLE_OPERATION_CHECK_SERVER", 2);
 
-define("GROUPOPERATION_ADD_USERS", 0);
-define("GROUPOPERATION_SAVE", 1);
-define("GROUPOPERATION_CREATE", 2);
+define("M_GROUPOPERATION_ADD_USERS", 0);
+define("M_GROUPOPERATION_SAVE", 1);
+define("M_GROUPOPERATION_CREATE", 2);
 
 function consoleCommand($header_json){
 
 	$client = new WebsocketClient;
 	
-	$response="{'message': 'ConsoleCommand. begin'}";
+	$response="{'message': 'ConsoleCommand. begin', 'status':'0'}";
 	
 	if($client->connect($header_json, '127.0.0.1', WEBSOCKET_SERVER_PORT,"/")){	
 		
@@ -619,7 +620,7 @@ function consoleCommand($header_json){
 		$response=$message_array["payload"];
 	
 	}else{
-		$response="{'message':'ConsoleCommand. Connecting failed'}";
+		$response="{'message':'ConsoleCommand. Connecting failed', 'status':'0'}";
 	}
 	
 	$client->disconnect();
@@ -629,6 +630,62 @@ function consoleCommand($header_json){
 	return $json;
 
 }
+
+//--------------------Restart Server----------------------------
+
+/**
+ * Auto-start the server from the Android client if server is fall
+ * method POST
+ * url - /communicator/start
+ * return - status and error
+ */
+$app->get('/communicator/start', 'authenticate', function () use ($app)  {
+	
+	$db = new DbHandlerProfile();
+	global $user_id;
+	
+	//Console command to notify users
+	$json_header=array();
+	$json_header["console"]="v2/communicator/start";
+	$json_header["operation"]=M_CONSOLE_OPERATION_CHECK_SERVER;
+	$json_header["userid"]=$user_id;		
+	
+	$console_response["status"]=0;
+	$console_response["error"]=true;
+	$console_response["message"]="ServerError. catch exception";
+	
+	try{
+		$console_response=consoleCommand($json_header);
+	}catch(Exception $e){
+		
+	}
+	
+	if($console_response["status"]==1){
+		$console_response["error"]=false;		
+		echoResponse(200, $console_response);
+		return;
+	}
+	
+	$config = array(
+		'pid' => 'communicator/out/websocket_pid.txt',
+		'websocket' => 'tcp://0.0.0.0:8001',
+		'log' => 'communicator/out/websocket_log.txt'
+	);
+	
+	//Log
+	$message="ServerRestart. user_id=".$user_id;	
+	if($config['log']){
+		file_put_contents($config['log'], "pid:".posix_getpid()." ".date("Y-m-d H:i:s")." ".$message."\n",FILE_APPEND); 
+	}
+	
+	require dirname(__FILE__).'/communicator/WebsocketServer.php';
+	
+	$websocketserver = new WebsocketServer($config);	
+
+	$websocketserver->Start();
+	
+});	
+
 
 
 $app->run();
