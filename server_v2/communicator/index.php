@@ -7,7 +7,7 @@
  * log - Used to save logs of WebsocketServer
  */
  
- /*
+ 
 require dirname(__FILE__).'/WebsocketServer.php';
 
 $config = array(
@@ -20,6 +20,6 @@ $config = array(
 $websocketserver = new WebsocketServer($config);
 
 $websocketserver->Stop();
-$websocketserver->Start();*/
+$websocketserver->Start();
 
 ?>

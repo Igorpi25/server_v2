@@ -2,6 +2,7 @@
 
 require_once dirname(__FILE__).'/include/SimpleImage.php'; 
 require_once dirname(__FILE__).'/include/DbHandlerProfile.php';
+require_once dirname(__FILE__).'/include/DbHandlerChat.php';
 require_once dirname(__FILE__).'/include/PassHash.php';
 
 require_once dirname(__FILE__).'/libs/Slim/Slim.php';
@@ -127,7 +128,43 @@ $app->post('/register', function() use ($app) {
             	$response["success"] = 1;
                 $response["error"] = false;
                 $response["message"] = "You are successfully registered";
+				
                 echoResponse(201, $response);
+				
+				error_log("index.register 1");
+								
+				$created_user=$db->getUserByEmail($email);
+				$created_user_id=$created_user["id"];
+				
+				//Make friend
+				$db->friendOperation(1,$created_user_id,0);
+				$db->friendOperation($created_user_id,1,2);
+				
+				//Add to ChatDemo Community group
+				$db->addUserToGroup(2,$created_user_id,0);
+								
+				
+				$db_chat = new DbHandlerChat();
+				
+				//Make private message to new user from Igor Ivanov
+				$db_chat->addMessagePrivate(1,$created_user_id,1,"Hello! I'm author of the ChatDemo. Welcome to community!");
+				
+				//Make notification in ChatDemo group
+				$group_notification_id=$db_chat->addMessageGroup($created_user_id,2,100,$name." joined the group");
+
+				error_log("index.register 2");
+										
+				//Inform all that user registered
+				$json_header=array();
+				$json_header["console"]="v2/index/register";
+				$json_header["operation"]=M_CONSOLE_OPERATION_USER_REGISTERED;
+				$json_header["senderid"]=$created_user_id;		
+				$json_header["sendername"]=$name;		
+				$json_header["group_notification_id"]=$group_notification_id;
+				consoleCommand($json_header);
+				
+				error_log("index.register 3");
+								
             } else if ($res == USER_CREATE_FAILED) {
             	$response["success"] = 0;
                 $response["error"] = true;
@@ -602,6 +639,7 @@ $app->post('/search_contact', 'authenticate', function () use ($app)  {
 define("M_CONSOLE_OPERATION_USER_CHANGED", 0);
 define("M_CONSOLE_OPERATION_GROUP", 1);
 define("M_CONSOLE_OPERATION_CHECK_SERVER", 2);
+define("M_CONSOLE_OPERATION_USER_REGISTERED", 3);
 
 define("M_GROUPOPERATION_ADD_USERS", 0);
 define("M_GROUPOPERATION_SAVE", 1);
@@ -609,25 +647,36 @@ define("M_GROUPOPERATION_CREATE", 2);
 
 function consoleCommand($header_json){
 
-	$client = new WebsocketClient;
 	
-	$response="{'message': 'ConsoleCommand. begin', 'status':'0'}";
-	
-	if($client->connect($header_json, '127.0.0.1', WEBSOCKET_SERVER_PORT,"/")){	
+		$client = new WebsocketClient;
 		
-		$data = fread($client->_Socket, 1024);
-		$message_array = $client->_hybi10Decode($data);//implode(",",);
-		$response=$message_array["payload"];
+		$response="{'message': 'ConsoleCommand. begin', 'status':'0'}";
+		
+		error_log("index.consoleCommand 1");
+		
+		if($client->connect($header_json, '127.0.0.1', WEBSOCKET_SERVER_PORT,"/")){	
+			
+			$data = fread($client->_Socket, 1024);
+			$message_array = $client->_hybi10Decode($data);//implode(",",);
+			$response=$message_array["payload"];
+		
+		}else{
+			$response="{'message':'ConsoleCommand. Connecting failed', 'status':'0'}";
+		}
+		
+		error_log("index.consoleCommand 2");
+		
+		$client->disconnect();
+		
+		error_log("index.consoleCommand 3");
+		
+		$json=(array)json_decode($response);
+		
+		error_log("index.consoleCommand 4");
+		
+		return $json;
+		
 	
-	}else{
-		$response="{'message':'ConsoleCommand. Connecting failed', 'status':'0'}";
-	}
-	
-	$client->disconnect();
-	
-	$json=(array)json_decode($response);
-	
-	return $json;
 
 }
 

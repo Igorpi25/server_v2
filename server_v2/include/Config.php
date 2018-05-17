@@ -5,10 +5,10 @@
 
 //Файл публикуется с ошибками. Следует сразу добавить нужные строки 
 
-define('DB_USERNAME', 'igor');//MySql user login
-define('DB_PASSWORD', 'eY2vHmju');//Set password for mysql user
+define('DB_USERNAME', 'chatdemo_user');//MySql user login
+define('DB_PASSWORD', 'jdh65Akb');//Set password for mysql user
 define('DB_HOST', 'localhost');//You should set here your  own host name. Ususally used 'localhost'
-define('DB_NAME', 'igorserver');//date-base name used in mysql
+define('DB_NAME', 'chatdemo');//date-base name used in mysql
  
 define('USER_CREATED_SUCCESSFULLY', 0);
 define('USER_CREATE_FAILED', 1);

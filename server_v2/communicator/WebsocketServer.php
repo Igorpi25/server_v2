@@ -60,6 +60,8 @@ define("GROUPSTATUS_NOT_IN_GROUP", 7);
 define("CONSOLE_OPERATION_USER_CHANGED", 0);
 define("CONSOLE_OPERATION_GROUP", 1);
 define("CONSOLE_OPERATION_CHECK_SERVER", 2);
+define("CONSOLE_OPERATION_USER_REGISTERED", 3);
+
 
 
 class WebsocketServer {
@@ -781,6 +783,53 @@ protected function ProcessConsoleOperation($connect,$info) {
 			$data_string=json_encode($response);
 			fwrite($connect, $this->encode($data_string));
 		
+		break;
+		
+		case CONSOLE_OPERATION_USER_REGISTERED:
+			$senderid=$info["senderid"];
+			$sendername=$info["sendername"];
+			$group_notification_id=$info["group_notification_id"];
+			
+			$this->log("<<<CONSOLE_OPERATION_USER_REGISTERED:");
+			
+			$this->outgoingNotifyFriends($senderid);	
+			$this->outgoingNotifyAllGroupmates($senderid);
+			
+			$users_array=$this->db_profile->getUsersInGroup(2);//Все в ChatDemo Community
+			
+			
+			
+			foreach($users_array as $user){
+				$status=$user["status_in_group"];
+				$userid=$user["userid"];
+				//Если одногрупник статус 0 или 1 или 2, и сейчас подключен
+				if( (($status==0)||($status==1)||($status==2)) && (array_key_exists(strval($userid), $this->map_userid_connect)) ){
+					
+					$groupmate_connect=$this->getConnectByUserId($userid);
+					
+					//Одногрупник не сам отправитель
+					if($userid!=$senderid){
+						//Отправляем сообщение одногрупнику
+						
+						$data_string='{"transport":"'.TRANSPORT_NOTIFICATION.'","value":"'.$sendername.' joined the group","date":"'.time().'","group_id":"2","id":"'.$group_notification_id.'","sender":"'.$senderid.'", "last_timestamp":"'.time().'"}';
+		
+						fwrite($groupmate_connect, $this->encode($data_string));	
+						$this->log("SendToDestination. Group. Destination.connectid=".$this->getIdByConnect($groupmate_connect).", Destination.userid=".$this->getUserIdByConnect($groupmate_connect)." Message-data: ".$data_string);
+					}
+				}		
+			}
+			
+			$this->log(">>>");				
+			
+			//Response to console client
+			$response = array();
+			$response["message"]="WebsocketServer. ProcessConsoleOperation CONSOLE_OPERATION_USER_REGISTERED success senderid=".$senderid;					
+			$response["status"]=1;
+			$data_string=json_encode($response);
+			fwrite($connect, $this->encode($data_string));
+			
+			error_log("WebsocketServer.Finished");
+			
 		break;
 	}
 	
